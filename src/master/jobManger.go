@@ -21,6 +21,27 @@ var (
 )
 
 /**
+删除某一个job
+ */
+func (this *JobManager) DeleteJob( jobName string ) (oldJob *common.Job , err error ) {
+	var (
+		jobKey string
+		deleteResponse *clientv3.DeleteResponse
+		oldJobObj *common.Job
+	)
+	oldJobObj = &common.Job{}
+	jobKey = "/cron/jobs/" + jobName
+	if deleteResponse , err = this.kv.Delete( context.TODO() , jobKey , clientv3.WithPrevKV() ); nil != err {
+		return nil , err
+	}
+	if 0 != len( deleteResponse.PrevKvs ) {
+		err = json.Unmarshal(  deleteResponse.PrevKvs[0].Value  ,  oldJobObj)
+		oldJob = oldJobObj
+	}
+	return
+}
+
+/**
 保存任务到etcd节点中
  */
 func (this *JobManager) SaveJob(job *common.Job) (oldJob *common.Job , err error ) {

@@ -21,18 +21,15 @@ func main() {
 	initEnv()
 	// 加载配置文件
 	if err = common.InitConfig("./src/config/master.json") ; nil != err {
-		goto ERR
+		fmt.Println("加载配置文件失败..." , err)
 	}
 	// 启动etcd连接
 	if err = master.InitEtcdManager() ; nil != err {
-		goto ERR
+		fmt.Println("启动etcd连接失败..." , err)
 	}
 	// 启动http服务-API
 	if err = master.InitApiServe( master.GlobalJobManager ) ; nil != err {
-		goto ERR
+		fmt.Println("启动http服务-API失败..." , err)
 	}
 	select {}
-
-ERR:
-	fmt.Println( err )
 }
