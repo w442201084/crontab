@@ -19,33 +19,33 @@ func NewServeHandler( jobManager iface.IJobManager ) *ServeHandle{
 }
 
 func (this *ServeHandle) JobDeleteHandler (res http.ResponseWriter , req * http.Request) {
+
 	var (
 		err error
 		results []byte
 		jobName string
 		oldJob *common.Job
 	)
-	if err = req.ParseForm() ; nil != err {
-		// 解析表单失败
-		if results , err = helper.JsonResponse( -1 , "表单解析失败", nil ); nil == err {
-			res.Write( results )
-			return
+	defer func() {
+		if r := recover(); r != nil {
+			if results , err = helper.JsonResponse( -1 , r.(string) , nil ); nil == err {
+				res.Write( results )
+				return
+			}
 		}
+	}()
+
+	if err = req.ParseForm() ; nil != err {
+		panic("表单解析失败")
 	}
 	// 任务名称
 	jobName = req.PostForm.Get("jobName")
 	if "" == jobName {
-		if results , err = helper.JsonResponse( -1 , "获取任务名称失败", nil ); nil == err {
-			res.Write( results )
-			return
-		}
+		panic("获取任务名称失败")
 	}
 
 	if oldJob , err = this.jobManager.DeleteJob( jobName ); nil != err {
-		if results , err = helper.JsonResponse( -1 , err.Error() , nil ); nil == err {
-			res.Write( results )
-			return
-		}
+		panic(err.Error())
 	}
 	// 返回正常应答
 	if results , err = helper.JsonResponse( 0 , "" , oldJob ); nil == err {
@@ -55,12 +55,10 @@ func (this *ServeHandle) JobDeleteHandler (res http.ResponseWriter , req * http.
 
 	// 返回错误
 	if results , err = helper.JsonResponse( -1 , err.Error() , nil ); nil == err {
-		res.Write( results )
+		panic(err.Error())
 		return
 	}
 	return
-
-
 }
 
 /**

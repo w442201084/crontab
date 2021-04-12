@@ -37,6 +37,8 @@ func InitApiServe( jobManager iface.IJobManager ) ( error ) {
 	muxHandler = http.NewServeMux()
 	muxHandler.HandleFunc( "/job/save" , handler.JobSaveHandler )
 	muxHandler.HandleFunc( "/job/delete" , handler.JobDeleteHandler )
+
+
 	if listener , err = net.Listen("tcp" , ":" + strconv.Itoa( common.GlobalConfig.ApiPort )) ; nil != err {
 		return err
 	}

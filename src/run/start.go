@@ -20,7 +20,7 @@ func main() {
 	// 初始化线程
 	initEnv()
 	// 加载配置文件
-	if err = common.InitConfig("./src/config/master.json") ; nil != err {
+	if err = common.InitConfig("./master.json") ; nil != err {
 		fmt.Println("加载配置文件失败..." , err)
 	}
 	// 启动etcd连接
