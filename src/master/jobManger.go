@@ -48,6 +48,28 @@ func (this *JobManager)  ListsJob() (jobLists []*common.Job , err error ) {
 	return
 }
 
+func (this *JobManager) KillJob( jobName string ) ( err error ){
+	var (
+		jobKey string
+		leaseGrantResponse *clientv3.LeaseGrantResponse
+		leaseId clientv3.LeaseID
+	)
+	// 通知worker杀死任务
+	jobKey = common.JOB_KILLER_DIR + jobName
+
+	// worker监听put操作-1sTTL
+	if leaseGrantResponse , err = this.lease.Grant(context.TODO() , 1 ); nil != err {
+		return
+	}
+	leaseId = leaseGrantResponse.ID
+
+	// 设置killer标记
+	if _ , err = this.kv.Put(context.TODO() , jobKey , "" , clientv3.WithLease( leaseId )); nil != err {
+		return
+	}
+	return
+}
+
 /**
 删除某一个job
  */

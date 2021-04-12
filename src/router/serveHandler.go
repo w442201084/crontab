@@ -18,6 +18,44 @@ func NewServeHandler( jobManager iface.IJobManager ) *ServeHandle{
 	}
 }
 
+func (this *ServeHandle) JobKillHandler( res http.ResponseWriter , req * http.Request ){
+	var (
+		err error
+		results []byte
+		jobName string
+	)
+	defer func() {
+		if r := recover(); r != nil {
+			if results , err = helper.JsonResponse( -1 , r.(string) , nil ); nil == err {
+				res.Write( results )
+				return
+			}
+		}
+	}()
+	if err = req.ParseForm() ; nil != err {
+		panic("表单解析失败")
+	}
+	// 任务名称
+	jobName = req.PostForm.Get("jobName")
+	if "" == jobName {
+		panic("获取任务名称失败")
+	}
+	if err = this.jobManager.KillJob( jobName ); nil != err {
+		panic(err.Error())
+	}
+	// 返回正常应答
+	if results , err = helper.JsonResponse( 0 , "" , nil ); nil == err {
+		res.Write( results )
+		return
+	}
+	// 返回错误
+	if results , err = helper.JsonResponse( -1 , err.Error() , nil ); nil == err {
+		panic(err.Error())
+		return
+	}
+	return
+}
+
 func (this *ServeHandle) JobListsHandler( res http.ResponseWriter , req * http.Request ){
 	var (
 		err error

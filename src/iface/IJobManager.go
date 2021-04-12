@@ -9,4 +9,7 @@ type IJobManager interface {
 	DeleteJob(jobName string) (oldJob *common.Job , err error )
 
 	ListsJob() (jobLists []*common.Job , err error )
+
+	KillJob( jobName string ) ( err error )
+
 }
