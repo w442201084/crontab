@@ -6,6 +6,7 @@ import (
 	"crontab/src/iface"
 	"encoding/json"
 	"fmt"
+	"go.etcd.io/etcd/api/v3/mvccpb"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"time"
 )
@@ -19,6 +20,33 @@ type JobManager struct {
 var (
 	GlobalJobManager iface.IJobManager
 )
+
+func (this *JobManager)  ListsJob() (jobLists []*common.Job , err error ) {
+	var (
+		jobKey string
+		getResponse *clientv3.GetResponse
+		kvPair *mvccpb.KeyValue
+		job *common.Job
+	)
+	jobKey = common.JOB_SAVE_DIR
+	if getResponse , err = this.kv.Get(context.TODO() , jobKey , clientv3.WithPrefix()); nil != err {
+		return
+	}
+	// 后续可以判断返回的数据列表长度是否为0
+	jobLists = make([]*common.Job , 0)
+	if len( getResponse.Kvs ) > 0 {
+		for _ , kvPair = range getResponse.Kvs {
+			job = &common.Job{}
+			err = json.Unmarshal(kvPair.Value , job)
+			if nil != err {
+				err = nil
+				continue
+			}
+			jobLists = append(jobLists , job)
+		}
+	}
+	return
+}
 
 /**
 删除某一个job

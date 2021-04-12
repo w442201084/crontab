@@ -18,6 +18,34 @@ func NewServeHandler( jobManager iface.IJobManager ) *ServeHandle{
 	}
 }
 
+func (this *ServeHandle) JobListsHandler( res http.ResponseWriter , req * http.Request ){
+	var (
+		err error
+		jobList []*common.Job
+		results []byte
+	)
+	defer func() {
+		if r := recover(); r != nil {
+			if results , err = helper.JsonResponse( -1 , r.(string) , nil ); nil == err {
+				res.Write( results )
+				return
+			}
+		}
+	}()
+	if jobList , err = this.jobManager.ListsJob(); nil != err {
+		panic(err.Error())
+	}
+	if results , err = helper.JsonResponse( 0 , "" , jobList ); nil == err {
+		res.Write( results )
+		return
+	}
+	// 返回错误
+	if results , err = helper.JsonResponse( -1 , err.Error() , nil ); nil == err {
+		panic(err.Error())
+	}
+	return
+}
+
 func (this *ServeHandle) JobDeleteHandler (res http.ResponseWriter , req * http.Request) {
 
 	var (
@@ -63,7 +91,7 @@ func (this *ServeHandle) JobDeleteHandler (res http.ResponseWriter , req * http.
 
 /**
 api-保存任务的具体操作
-POST jobs:{"name":"xxx" , "commond":"echo 123;" , "cronExpr":"* * * * ..."}
+POST jobs:{"name":"xxx" , "command":"echo 123;" , "cronExpr":"* * * * ..."}
  */
 func(this *ServeHandle) JobSaveHandler( res http.ResponseWriter , req * http.Request ) {
 	var (

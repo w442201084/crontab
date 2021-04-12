@@ -9,4 +9,7 @@ type IServerHandler interface {
 
 	/** 处理etcd-Delete */
 	JobDeleteHandler( res http.ResponseWriter , req * http.Request )
+
+	/** 处理etcd-列表 */
+	JobListsHandler( res http.ResponseWriter , req * http.Request )
 }
