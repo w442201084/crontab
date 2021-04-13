@@ -12,5 +12,8 @@
     "EtcdEndPoint": ["111.231.83.177:2379"],
 
     "etcd连接超时时间": "单位毫秒",
-    "EtcdDiaTimeOut": 5000
+    "EtcdDiaTimeOut": 5000,
+
+    "web静态文件的路径": "一定要写绝对路径",
+    "WebRoot": "/www/go/crontab/src/view/"
 }

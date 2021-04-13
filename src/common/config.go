@@ -17,6 +17,8 @@ type Config struct {
 
 	EtcdDiaTimeOut int `json:"etcdDiaTimeOut"` // etcd连接超时时间
 
+	WebRoot string `json:"webRoot"` // web静态文件的路径
+
 }
 
 var GlobalConfig *Config

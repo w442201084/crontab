@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/3.3.0/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="page-header" >
+                    <h1>你猜<small> ™</small></h1>
+                </div>
+            </div>
+        </div>
+
+        <!-- 功能按钮 -->
+        <div class="row">
+            <div class="col-md-12">
+                <button type="button" class="btn btn-primary">创建任务</button>
+            </div>
+        </div>
+
+        <!-- 任务列表 -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-default" style="margin-top: 20px">
+                    <div class="panel-body">
+                        <table id="jobs" class="table table-striped" >
+                            <thead>
+                                <tr>
+                                    <th>任务名称</th>
+                                    <th>shell命令</th>
+                                    <th>cron表达式</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        $(function(){
+
+            var host = "http://192.168.233.128:8888"
+
+            $("#jobs").on("click" , ".edit-job" , function (event) {
+                console.log(event)
+            })
+
+            $("#jobs").on("click" , ".delete-job" , function (event) {
+                console.log(event)
+            })
+
+            $("#jobs").on("click" , ".kill-job" , function (event) {
+                console.log(event)
+            })
+            
+            
+            function flushJobLists() {
+                $.ajax({
+                  url:host + '/job/lists' ,
+                  dataType:'json',
+                  success:function (resp) {
+                     if ( resp.code != 0 ) {
+                         return
+                     }
+                     var jobLists = resp.data
+                      $("#jobs tbody").empty()
+                      for ( var i = 0; i < jobLists.length; i ++ ) {
+                          var job = jobLists[i]
+                          var tr = $("<tr>")
+                          tr.append($('<td class="job-name">').html(job.name))
+                          tr.append($('<td class="job-command">').html(job.command))
+                          tr.append($('<td class="cron">').html(job.cronExpr))
+                          var toolbar = $('<div class="btn-toolbar">').
+                            append('<button type="button" class="btn btn-info edit-job">编辑</button>').
+                            append('<button type="button" class="btn btn-danger delete-job">删除</button>').
+                            append('<button type="button" class="btn btn-warning kill-job">强杀</button>')
+                          tr.append('<td>').append(toolbar)
+                          $("#jobs tbody").append(tr)
+                      }
+                  }
+                })
+            }
+            flushJobLists()
+        })
+    </script>
+</body>
+
+</html>
