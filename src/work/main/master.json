@@ -1,0 +1,19 @@
+{
+    "API接口服务端口": "处理任务的curd",
+    "ApiPort": 8888,
+
+    "API读超时": "单位秒",
+    "ApiReadTimeOut": 5,
+
+    "API写超时": "单位秒",
+    "ApiWriteTimeOut": 5,
+
+    "etcd集群列表": "配置多个避免单点故障",
+    "EtcdEndPoint": ["111.231.83.177:2379"],
+
+    "etcd连接超时时间": "单位毫秒",
+    "EtcdDiaTimeOut": 5000,
+
+    "web静态文件的路径": "一定要写绝对路径",
+    "WebRoot": "/www/go/crontab/src/view/"
+}
