@@ -47,24 +47,120 @@
             </div>
         </div>
     </div>
+
+    <div id="edit-job" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">编辑task</h4>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="edit-name">任务名称</label>
+                            <input readonly type="text" class="form-control" id="edit-name" placeholder="任务名称" >
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-command">Shell命令</label>
+                            <input type="text" class="form-control" id="edit-command" placeholder="Shell命令" >
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-cron">Cron表达式</label>
+                            <input type="text" class="form-control" id="edit-cron" placeholder="Cron表达式" >
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" id="save-job">保存</button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
     <script>
         $(function(){
 
             var host = "http://192.168.233.128:8888"
-
+            // 编辑
             $("#jobs").on("click" , ".edit-job" , function (event) {
-                console.log(event)
+                // 赋值给模态框
+                $("#edit-name").val($(this).parents("tr").children(".job-name").text())
+                $("#edit-command").val($(this).parents("tr").children(".job-command").text())
+                $("#edit-cron").val($(this).parents("tr").children(".job-cron").text())
+                // 展示模态框
+                $("#edit-job").modal("show")
             })
 
+            // 删除
             $("#jobs").on("click" , ".delete-job" , function (event) {
-                console.log(event)
+                // 节点名称
+                var jobName = $(this).parents("tr").children(".job-name").text()
+                $.ajax({
+                    url:host + '/job/delete' ,
+                    type:"post",
+                    dataType:'json',
+                    data:{jobName:jobName},
+                    complete:function (res) {
+                        if ( 0 == res.responseJSON.code ) {
+                            flushJobLists()
+                        } else {
+                            alert("删除失败"+ res.responseJSON.msg)
+                        }
+                    },
+                    error:function () {
+
+                    }
+                })
             })
 
+            // 强杀
             $("#jobs").on("click" , ".kill-job" , function (event) {
-                console.log(event)
+                // 节点名称
+                var jobName = $(this).parents("tr").children(".job-name").text()
+                $.ajax({
+                    url:host + '/job/kill' ,
+                    type:"post",
+                    dataType:'json',
+                    data:{jobName:jobName},
+                    complete:function (res) {
+                        if ( 0 == res.responseJSON.code ) {
+                            flushJobLists()
+                        } else {
+                            alert("强杀"+ res.responseJSON.msg)
+                        }
+                    },
+                    error:function () {
+
+                    }
+                })
             })
-            
-            
+
+            // 保存任务
+            $("#save-job").on("click" , function () {
+                // {"name":"测试2" , "command":"echo 123;" , "cronExpr":"/2 * * * * * *"}
+                var jobInfo = {name:$("#edit-name").val() , command : $("#edit-command").val() , cronExpr : $("#edit-cron").val()}
+                $.ajax({
+                    url:host + '/job/save' ,
+                    type:"post",
+                    dataType:'json',
+                    data: {job:JSON.stringify(jobInfo)},
+                    complete:function (res) {
+                        if ( 0 == res.responseJSON.code ) {
+                            $("#edit-job").modal("hide")
+                            flushJobLists()
+                        } else {
+                            alert("保存失败"+ res.responseJSON.msg)
+                        }
+                    },
+                    error:function () {
+
+                    }
+                })
+            })
+
+
             function flushJobLists() {
                 $.ajax({
                   url:host + '/job/lists' ,
@@ -80,7 +176,7 @@
                           var tr = $("<tr>")
                           tr.append($('<td class="job-name">').html(job.name))
                           tr.append($('<td class="job-command">').html(job.command))
-                          tr.append($('<td class="cron">').html(job.cronExpr))
+                          tr.append($('<td class="job-cron">').html(job.cronExpr))
                           var toolbar = $('<div class="btn-toolbar">').
                             append('<button type="button" class="btn btn-info edit-job">编辑</button>').
                             append('<button type="button" class="btn btn-danger delete-job">删除</button>').

@@ -2,6 +2,7 @@ package master
 
 import (
 	"crontab/src/common"
+	"crontab/src/helper"
 	"crontab/src/iface"
 	"crontab/src/router"
 	"net"
@@ -24,6 +25,24 @@ type ApiServe struct {
 	muxHandler *http.ServeMux
 }
 
+/**
+@desc 接受所有handler的panic
+ */
+func safeHandler ( fn http.HandlerFunc ) http.HandlerFunc{
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				msg , err := helper.JsonResponse( -1 , err.(string), nil )
+				if nil != err {
+					return
+				}
+				w.Write( msg )
+			}
+		}()
+		fn(w, r)
+	}
+}
+
 func InitApiServe( jobManager iface.IJobManager ) ( error ) {
 	var (
 		muxHandler *http.ServeMux
@@ -37,10 +56,10 @@ func InitApiServe( jobManager iface.IJobManager ) ( error ) {
 	handler = router.NewServeHandler(jobManager)
 	// 路由对象
 	muxHandler = http.NewServeMux()
-	muxHandler.HandleFunc( "/job/save" , handler.JobSaveHandler )
-	muxHandler.HandleFunc( "/job/delete" , handler.JobDeleteHandler )
-	muxHandler.HandleFunc( "/job/lists" , handler.JobListsHandler )
-	muxHandler.HandleFunc( "/job/kill" , handler.JobKillHandler )
+	muxHandler.HandleFunc( "/job/save" , safeHandler(handler.JobSaveHandler) )
+	muxHandler.HandleFunc( "/job/delete" , safeHandler(handler.JobDeleteHandler) )
+	muxHandler.HandleFunc( "/job/lists" , safeHandler(handler.JobListsHandler) )
+	muxHandler.HandleFunc( "/job/kill" , safeHandler(handler.JobKillHandler) )
 
 	// 处理静态资源、设置静态路径
 	staticDir = http.Dir(common.GlobalConfig.WebRoot)

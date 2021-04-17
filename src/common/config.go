@@ -23,7 +23,7 @@ type Config struct {
 
 var GlobalConfig *Config
 
-func InitConfig( fileName string ) (  error ) {
+func InitConfig( fileName string ) error {
 	var (
 		content []byte
 		err error
