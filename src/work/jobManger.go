@@ -58,9 +58,15 @@ func(this *JobManager) WatchEtcdJobs() ( err error ){
 			for wacthEvent = range watchResponse.Events {
 				switch wacthEvent.Type {
 				case mvccpb.PUT : // 任务保存
-					// TODO 反序列化、推送给调度协程
+					// 解析获得job
+					if job , err = helper.UnPackJob( wacthEvent.Kv.Value ); nil != err {
+						continue
+					}
+					// 推送更新事件
+
 
 				case mvccpb.DELETE : // 任务删除
+					// 推送删除事件
 				}
 			}
 		}
