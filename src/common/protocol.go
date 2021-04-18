@@ -1,6 +1,10 @@
 package common
 
-import "strings"
+import (
+	"github.com/gorhill/cronexpr"
+	"strings"
+	"time"
+)
 
 // 定时任务
 type Job struct {
@@ -21,6 +25,35 @@ type ResponseFormat struct {
 	Data interface{} `json:"data"`
 }
 
+// 变化的事件
+type JobEvent struct {
+	EventType int // SAVE 、 DELETE
+	Job *Job
+}
+
+// 结合第三方包的下次调度计划
+type JobSchedulerPlan struct {
+	Job *Job // 调度的任务
+	Expr *cronexpr.Expression // 第三方包解析好的一个表达式
+	NextTime time.Time // 下次调度的时间
+}
+
+// 任务的执行状态
+type JobExecuteStatus struct {
+	Job *Job
+	PlanTime time.Time //理论上的执行时间
+	RealTime time.Time // 实际的调度时间
+}
+
+// 任务执行结果
+type JobExecuteResult struct {
+	JobExecuteStatus *JobExecuteStatus // 执行的状态
+	OutPut []byte // 执行结果
+	Err error // 错误原因
+	StartTime time.Time // 脚本开始时间
+	EndTime time.Time // 脚本结束时间
+}
+
 /**
 通过etcd里面存储的KEY截取里面的名称
 比如：
@@ -28,4 +61,46 @@ type ResponseFormat struct {
  */
 func ExtraJobName ( jobKey string ) string {
 	return strings.Trim(jobKey , JOB_SAVE_DIR)
+}
+
+
+/**
+	构建一个任务变化的事件
+	主要是 1、更新任务  2、删除任务
+ */
+func BuildEventJob( eventType int , job *Job ) (jobEvent *JobEvent){
+	return &JobEvent{
+		EventType: eventType,
+		Job: job,
+	}
+}
+
+// 根据创建的任务生成一个任务执行计划
+func BuildJobSchedulerPlan( job *Job ) ( *JobSchedulerPlan , error ){
+	var (
+		expr *cronexpr.Expression
+		err error
+	)
+
+	if expr , err = cronexpr.Parse( job.CronExpr ); nil != err {
+		return nil , err
+	} else {
+		// 返回任务调度计划
+		return &JobSchedulerPlan{
+			Job: job,
+			Expr: expr,
+			NextTime: expr.Next(time.Now()),
+		} , nil
+	}
+}
+
+/**
+创建一个任务状态
+ */
+func BuildJobExecuteStatus( plan *JobSchedulerPlan ) *JobExecuteStatus{
+	return &JobExecuteStatus{
+		Job: plan.Job ,
+		PlanTime: plan.NextTime , //计划调度时间
+		RealTime: time.Now(), // 真实调度时间
+	}
 }

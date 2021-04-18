@@ -4,7 +4,6 @@ import (
 	"context"
 	"crontab/src/common"
 	"crontab/src/helper"
-	"fmt"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"time"
@@ -28,8 +27,10 @@ func(this *JobManager) WatchEtcdJobs() ( err error ){
 		job *common.Job
 		watchStartReversion int64
 		watchChan clientv3.WatchChan
-		watchResponse *clientv3.WatchResponse
-		wacthEvent *clientv3.Event
+		watchResponse clientv3.WatchResponse
+		watchEvent *clientv3.Event
+		jobName string
+		jobEvent *common.JobEvent
 	)
 
 	// 监听JOB_SAVE_DIR路径所有的任务
@@ -37,13 +38,13 @@ func(this *JobManager) WatchEtcdJobs() ( err error ){
 		return
 	}
 
-	// 当前有哪些任务
+	// 当前有哪些任务。第一次进来的时候也需要推送到调度的协程
 	for _ , kvPair = range getResponse.Kvs {
 		if job , err = helper.UnPackJob(kvPair.Value); nil == err {
-			fmt.Println(job)
+			jobEvent = common.BuildEventJob( common.JOB_EVENT_SAVE , job )
+			GlobalScheduler.PushJobPlan( jobEvent )
 		}
 	}
-
 
 	// 启动监听协程
 	go func() {
@@ -51,26 +52,33 @@ func(this *JobManager) WatchEtcdJobs() ( err error ){
 		watchStartReversion = getResponse.Header.Revision + 1
 
 		// 启动监听-监听/cron/jobs/路径下所有任务的变化
-		watchChan = this.watcher.Watch( context.TODO() , common.JOB_SAVE_DIR , clientv3.WithRev(watchStartReversion) )
+		watchChan = this.watcher.Watch( context.TODO() , common.JOB_SAVE_DIR ,
+			clientv3.WithRev(watchStartReversion) , clientv3.WithPrefix() )
 
 		// 处理监听
 		for watchResponse = range watchChan {
-			for wacthEvent = range watchResponse.Events {
-				switch wacthEvent.Type {
+			for _ , watchEvent = range watchResponse.Events {
+				switch watchEvent.Type {
 				case mvccpb.PUT : // 任务保存
 					// 解析获得job
-					if job , err = helper.UnPackJob( wacthEvent.Kv.Value ); nil != err {
+					if job , err = helper.UnPackJob( watchEvent.Kv.Value ); nil != err {
 						continue
 					}
-					// 推送更新事件
-
+					// 构建一个EVENT事件
+					jobEvent = common.BuildEventJob( common.JOB_EVENT_SAVE , job )
 
 				case mvccpb.DELETE : // 任务删除
 					// 推送删除事件
+					jobName = string(watchEvent.Kv.Key)
+					job = &common.Job{
+						Name: jobName,
+					}
+					// 构建一个EVENT事件
+					jobEvent = common.BuildEventJob( common.JOB_EVENT_DELETE , job )
 				}
+				GlobalScheduler.PushJobPlan( jobEvent )
 			}
 		}
-
 
 	}()
 
@@ -81,6 +89,14 @@ var (
 	GlobalJobManager *JobManager
 )
 
+/**
+@desc 创建一个分布式锁、基于etcd
+ */
+func(this *JobManager) CreateJobLock( jobName string ) (jobLock *JobLock){
+	jobLock = InitJobLock( jobName , this.kv , this.lease )
+	return
+}
+
 
 // 初始化ETCD对象
 func InitEtcdManager () error {
@@ -90,7 +106,7 @@ func InitEtcdManager () error {
 		err error
 		lease clientv3.Lease
 		kv clientv3.KV
-		wacther clientv3.Watcher
+		watcher clientv3.Watcher
 	)
 	config = clientv3.Config{
 		Endpoints: common.GlobalConfig.EtcdEndPoint , // 服务器集群地址
@@ -106,13 +122,18 @@ func InitEtcdManager () error {
 	// 获取租约对象
 	lease = clientv3.NewLease( client )
 
-	wacther = clientv3.NewWatcher( client )
+	watcher = clientv3.NewWatcher( client )
 
 	GlobalJobManager = &JobManager{
 		client : client ,
 		kv : kv ,
 		lease: lease,
-		watcher: wacther ,
+		watcher: watcher ,
 	}
+
+
+	// 开启任务监听
+	GlobalJobManager.WatchEtcdJobs()
+
 	return nil
 }

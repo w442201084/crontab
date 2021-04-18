@@ -28,12 +28,18 @@ func main() {
 		return
 	}
 
+	// 启动执行器
+	work.InitExecutor()
+
+	// 启动任务调度器
+	work.InitScheduler()
+
+
 	// 启动etcd连接
 	if err = work.InitEtcdManager() ; nil != err {
 		fmt.Println("启动etcd连接失败..." , err)
 		return
 	}
-	work.GlobalJobManager.WatchEtcdJobs()
 
 	select {
 

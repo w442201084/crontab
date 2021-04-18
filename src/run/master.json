@@ -15,5 +15,5 @@
     "EtcdDiaTimeOut": 5000,
 
     "web静态文件的路径": "一定要写绝对路径",
-    "WebRoot": "/www/go/crontab/src/view/"
+    "WebRoot": "/Users/ghost/Documents/work/go/crontab/src/view/"
 }
