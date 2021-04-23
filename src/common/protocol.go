@@ -2,6 +2,7 @@ package common
 
 import (
 	"github.com/gorhill/cronexpr"
+	"net"
 	"strings"
 	"time"
 )
@@ -103,4 +104,31 @@ func BuildJobExecuteStatus( plan *JobSchedulerPlan ) *JobExecuteStatus{
 		PlanTime: plan.NextTime , //计划调度时间
 		RealTime: time.Now(), // 真实调度时间
 	}
+}
+
+func GetLocalIp () (ipv4 string , err error){
+	var (
+		addrs []net.Addr
+		addr net.Addr
+		ipNet *net.IPNet // IP地址
+		isIpNet bool
+	)
+
+	if addrs , err = net.InterfaceAddrs() ; nil != err {
+		return
+	}
+
+	// 取第一个非local的host
+	for _ , addr = range addrs {
+		// 这个网络地址是IP地址、ipv4、ipv6
+		if ipNet , isIpNet = addr.(*net.IPNet) ; isIpNet && !(ipNet.IP.IsLoopback())  {
+			// 跳过ipv6
+			if ipNet.IP.To4() != nil {
+				ipv4 = ipNet.IP.String()
+				return
+			}
+		}
+	}
+	err = ERR_CANT_GET_LOCAL_IP
+	return
 }

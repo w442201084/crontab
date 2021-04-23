@@ -28,12 +28,17 @@ func main() {
 		return
 	}
 
+	// 服务注册
+	if err = work.InitRegister(); nil != err  {
+		fmt.Println("服务注册失败..." , err)
+		return
+	}
+
 	// 启动执行器
 	work.InitExecutor()
 
 	// 启动任务调度器
 	work.InitScheduler()
-
 
 	// 启动etcd连接
 	if err = work.InitEtcdManager() ; nil != err {
