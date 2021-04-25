@@ -98,7 +98,7 @@
                 // 节点名称
                 var jobName = $(this).parents("tr").children(".job-name").text()
                 $.ajax({
-                    url:host + '/job/delete' ,
+                    url:'/job/delete' ,
                     type:"post",
                     dataType:'json',
                     data:{jobName:jobName},
@@ -120,7 +120,7 @@
                 // 节点名称
                 var jobName = $(this).parents("tr").children(".job-name").text()
                 $.ajax({
-                    url:host + '/job/kill' ,
+                    url:'/job/kill' ,
                     type:"post",
                     dataType:'json',
                     data:{jobName:jobName},
@@ -142,7 +142,7 @@
                 // {"name":"测试2" , "command":"echo 123;" , "cronExpr":"/2 * * * * * *"}
                 var jobInfo = {name:$("#edit-name").val() , command : $("#edit-command").val() , cronExpr : $("#edit-cron").val()}
                 $.ajax({
-                    url:host + '/job/save' ,
+                    url:'/job/save' ,
                     type:"post",
                     dataType:'json',
                     data: {job:JSON.stringify(jobInfo)},
@@ -163,7 +163,7 @@
 
             function flushJobLists() {
                 $.ajax({
-                  url:host + '/job/lists' ,
+                  url:'/job/lists' ,
                   dataType:'json',
                   success:function (resp) {
                      if ( resp.code != 0 ) {
